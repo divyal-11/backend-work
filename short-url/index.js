@@ -1,9 +1,13 @@
 const express = require("express")
+const cookieParser=require("cookie-parser")
 const mongoose = require("mongoose")
 const connectDB = require("./connect")
+const {restrictToLoggedinUserOnly,checkAuth}=require("./middleware/auth")
 const URL = require("./models/url")
-const urlRoute = require("./routes/url")
 const path=require("path")
+
+const userRoute = require("./routes/user")
+const urlRoute = require("./routes/url")
 const staticRoute = require("./routes/staticRouter")
 
 const app = express()
@@ -20,9 +24,7 @@ app.set("views", path.resolve("./views"))
 
 app.use(express.json())
 app.use(express.urlencoded({extended:false}))
-
-app.use("/url", urlRoute)
-app.use("/", staticRoute)
+app.use(cookieParser())
 
 app.get('/url/:shortUrl', async (req, res) => {
     const shortUrl = req.params.shortUrl
@@ -30,9 +32,25 @@ app.get('/url/:shortUrl', async (req, res) => {
         shortUrl
     }, { $push: { visitHistory: { timestamp: Date.now() } } }
     )
-    res.redirect(entry.redirectedUrl)
+    if (!entry) {
+        return res.status(404).send("URL not found")
+    }
+    
+    const redirectUrl = entry.redirectedUrl.startsWith('http://') || entry.redirectedUrl.startsWith('https://')
+        ? entry.redirectedUrl
+        : `https://${entry.redirectedUrl}`;
+
+    
+    res.redirect(redirectUrl)
 })
-const port = 3000
+
+app.use("/url", restrictToLoggedinUserOnly,urlRoute)
+app.use("/user",userRoute)
+app.use("/", checkAuth, staticRoute)
+
+
+
+const port = 8000
 
 
 
