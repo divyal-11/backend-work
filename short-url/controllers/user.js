@@ -14,9 +14,9 @@ async function handleUserSignUp(req, res) {
     });
 
     // 2. Automatically log them in (create session + cookie)
-    const sessionId = uuidv4();
-    setUser(sessionId, user);
-    res.cookie("uid", sessionId);
+    
+    const token = setUser(user);
+    res.cookie("token", token);
 
     // 3. Now redirect to / (they are authenticated!)
     return res.redirect('/');
@@ -28,10 +28,9 @@ async function handleUserLogin(req,res){
     const user = await User.findOne({email,password})
     
     if(!user) return res.render('login',{error:"Invalid Creds"})
-    const sessionId=uuidv4();
-    setUser(sessionId,user)
-
-    res.cookie("uid",sessionId)
+    
+    const token = setUser(user);
+    res.cookie("token",token)
 
     return res.redirect('/')
 }
