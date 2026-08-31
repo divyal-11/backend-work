@@ -1,26 +1,33 @@
 const {getUser}=require("../service/auth")
 
-async function restrictToLoggedinUserOnly(req,res,next){
-    const userToken=req.cookies?.token;
-    
-    if(!userToken)return res.redirect("/login")
+function checkForAuthentication(req, res, next) {
+    // 1. Try Authorization header first (for API clients like Postman)
+    const authorizationHeaderValue = req.headers['authorization'];
+    req.user = null;
 
-    const user = getUser(userToken)
+    let token;
 
-    if(!user)return res.redirect("/login")
+    if (authorizationHeaderValue && authorizationHeaderValue.startsWith('Bearer')) {
+        token = authorizationHeaderValue.split('Bearer ')[1];
+    } else if (req.cookies?.token) {
+        // 2. Fallback to cookie (for browser-based forms)
+        token = req.cookies.token;
+    }
 
-    req.user=user;
-    next();
-}   
+    if (!token) return next();
 
-async function checkAuth(req,res,next){
-    const userUid=req.cookies?.token;
-
-    const user = getUser(userUid)
-
-
-    req.user=user;
+    const user = getUser(token);
+    req.user = user;
     next();
 }
 
-module.exports={restrictToLoggedinUserOnly,checkAuth}
+
+function restrictTo(roles){
+    return function (req,res,next){
+        if(!req.user)return res.redirect("/login")
+        if(!roles.includes(req.user.role)) return res.end("You are not authorized")
+        next()
+    }
+}
+
+module.exports={checkForAuthentication,restrictTo}

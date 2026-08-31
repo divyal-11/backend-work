@@ -2,7 +2,7 @@ const express = require("express")
 const cookieParser=require("cookie-parser")
 const mongoose = require("mongoose")
 const connectDB = require("./connect")
-const {restrictToLoggedinUserOnly,checkAuth}=require("./middleware/auth")
+const {checkForAuthentication,restrictTo}=require("./middleware/auth")
 const URL = require("./models/url")
 const path=require("path")
 
@@ -25,6 +25,7 @@ app.set("views", path.resolve("./views"))
 app.use(express.json())
 app.use(express.urlencoded({extended:false}))
 app.use(cookieParser())
+app.use(checkForAuthentication)
 
 app.get('/url/:shortUrl', async (req, res) => {
     const shortUrl = req.params.shortUrl
@@ -44,9 +45,9 @@ app.get('/url/:shortUrl', async (req, res) => {
     res.redirect(redirectUrl)
 })
 
-app.use("/url", restrictToLoggedinUserOnly,urlRoute)
+app.use("/url", restrictTo(["NORMAL","ADMIN"] ),urlRoute)
 app.use("/user",userRoute)
-app.use("/", checkAuth, staticRoute)
+app.use("/", staticRoute)
 
 
 

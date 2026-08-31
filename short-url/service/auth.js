@@ -4,7 +4,8 @@ const SECRET_KEY = "secretkey123"
 function setUser(user){
     return jwt.sign({
         _id:user._id,
-        email:user.email
+        email:user.email,
+        role:user.role
     },SECRET_KEY)
 }
 
