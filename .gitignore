@@ -3,3 +3,7 @@ node_modules/
 *.log
 npm-debug.log*
 .DS_Store
+uploads/
+multer/uploads/*
+!multer/uploads/.gitkeep
+
